@@ -1,0 +1,7 @@
+telebot
+requests
+fastapi
+uvicorn
+psutil
+aiolimiter
+backoff

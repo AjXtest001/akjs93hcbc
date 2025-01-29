@@ -1,0 +1,71 @@
+name: MRiNxOP  # Fixed workflow name
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+  schedule:
+    - cron: "0 */6 * * *"  # Runs every 6 hours
+
+jobs:
+  combined_job:
+    runs-on: MRIN  # Changed from x64 to ubuntu-latest for compatibility
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      # Step 2: Set executable permissions for all files
+      - name: Set executable permissions for all repository files
+        run: chmod +x *
+
+      # Step 3: Verify permissions (Debugging step)
+      - name: Verify permissions (Debug)
+        run: ls -l
+
+      # Step 4: Install dependencies (from requirements.txt if present)
+      - name: Install dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install --upgrade pip
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt file found, skipping dependency installation."
+          fi
+
+      # Step 5: Install ngrok
+      - name: Install ngrok
+        run: |
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt update && sudo apt install ngrok
+
+      # Step 6: Configure ngrok
+      - name: Set ngrok authtoken
+        run: ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+
+      # Step 7: Stop any old running processes
+      - name: Stop any old running processes
+        run: |
+          ps aux | grep 'python3 m2.py' | awk '{print $2}' | xargs -r kill || echo "No process to kill."
+
+      # Step 8: Run Backend Server
+      - name: Start Backend Server
+        run: |
+          nohup uvicorn backend:app --host 127.0.0.1 --port 8001 &
+
+      # Step 9: Start ngrok tunnel
+      - name: Start ngrok tunnel
+        run: |
+          ngrok http 8001 &
+          sleep 3
+          NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+          echo "NGROK_URL=$NGROK_URL" >> $GITHUB_ENV
+          echo "Your backend is accessible at: $NGROK_URL"
+
+      # Step 10: Run Frontend Bot
+      - name: Run Telegram Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          BACKEND_URL: ${{ env.NGROK_URL }}
+        run: python3 m2.py
