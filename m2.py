@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 
 # Telegram bot token and channel ID
-TOKEN = "8005743407:AAFb4fZKsHFsRSMglD0W5PC-zFMpj9nNT2M"  # Replace with your bot's API token
-CHANNEL_ID = "-1002197002727"  # Replace with your authorized channel ID
+TOKEN = "8063022518:AAHU8hhMeF0CjwLu1qM8igyegcHUUpY0MKA"  # Replace with your bot's API token
+CHANNEL_ID = "-1002476942397"  # Replace with your authorized channel ID
 BACKEND_URL = "http://127.0.0.1:8001/process_command"  # Backend endpoint
 EXEMPTED_USERS = [6768273586, 1431950109, 6111808288, 1340584902, 5317827318, 2007860433, 1056173503, 7082215587]
 
